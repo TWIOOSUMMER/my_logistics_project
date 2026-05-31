@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="modern">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }} - 物流信息管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/themes.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <button class="mobile-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')"><i
+            class="bi bi-list"></i></button>
+    <aside class="sidebar">
+        <a href="{% url 'index' %}" class="sidebar-brand"><span class="icon-box"><i
+                    class="bi bi-truck"></i></span>物流管理系统</a>
+        <div class="sidebar-nav">
+            <div class="sidebar-section">导航</div>
+            <nav class="nav flex-column">
+                <a class="nav-link" href="{% url 'index' %}"><i class="bi bi-house-door"></i>返回首页</a>
+            </nav>
+            <div class="sidebar-section">快捷入口</div>
+            <nav class="nav flex-column">
+                <a class="nav-link" href="{% url 'goods_add' %}"><i class="bi bi-plus-circle"></i>添加货物</a>
+                <a class="nav-link" href="{% url 'order_add' %}"><i class="bi bi-plus-circle"></i>添加订单</a>
+                <a class="nav-link" href="{% url 'goods_export' %}"><i class="bi bi-download"></i>导出货物CSV</a>
+            </nav>
+        </div>
+        <div class="sidebar-footer">
+            <div class="sidebar-section">主题风格</div>
+            <div class="theme-switcher">
+                <button class="theme-btn active" data-theme="modern" onclick="setTheme('modern')"><i
+                        class="bi bi-sun"></i></button>
+                <button class="theme-btn" data-theme="vintage" onclick="setTheme('vintage')"><i
+                        class="bi bi-book"></i></button>
+                <button class="theme-btn" data-theme="cyber" onclick="setTheme('cyber')"><i
+                        class="bi bi-cpu"></i></button>
+            </div>
+        </div>
+    </aside>
+    <div class="main-content">
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'index' %}">首页</a></li>
+                <li class="breadcrumb-item active">{{ title }}</li>
+            </ol>
+        </nav>
+
+        <div class="panel-card mx-auto" style="max-width: 750px;">
+            <div class="panel-header">
+                <h6><i class="bi bi-receipt"></i> {{ order.order_number }}</h6>
+                <a href="{% url 'order_print' order.id %}" class="btn btn-sm btn-secondary" target="_blank"><i
+                        class="bi bi-printer me-1"></i>打印运单</a>
+            </div>
+            <div class="panel-body">
+                <div style="display:flex;padding:12px 0;border-bottom:1px solid var(--border-light)">
+                    <span
+                        style="width:110px;font-size:.82rem;font-weight:500;color:var(--text-secondary);flex-shrink:0">订单编号</span>
+                    <span style="font-size:.88rem;font-weight:600;font-family:var(--font-family-mono)">{{ order.order_number }}</span>
+                </div>
+                <div style="display:flex;padding:12px 0;border-bottom:1px solid var(--border-light)">
+                    <span
+                        style="width:110px;font-size:.82rem;font-weight:500;color:var(--text-secondary);flex-shrink:0">客户名称</span>
+                    <span style="font-size:.88rem;font-weight:500">{{ order.customer_name }}</span>
+                </div>
+
+                <div style="padding:12px 0;border-bottom:1px solid var(--border-light)">
+                    <span
+                        style="width:110px;font-size:.82rem;font-weight:500;color:var(--text-secondary);display:inline-block;margin-bottom:8px">货物明细</span>
+                    <table style="width:100%;font-size:.84rem;border-collapse:collapse">
+                        <thead>
+                            <tr style="border-bottom:1px solid var(--border-light)">
+                                <th style="padding:4px 8px;text-align:left;font-size:.76rem;color:var(--text-muted)">
+                                    货物名称</th>
+                                <th style="padding:4px 8px;text-align:center;font-size:.76rem;color:var(--text-muted)">
+                                    类别</th>
+                                <th style="padding:4px 8px;text-align:right;font-size:.76rem;color:var(--text-muted)">数量
+                                </th>
+                                <th style="padding:4px 8px;text-align:right;font-size:.76rem;color:var(--text-muted)">单价
+                                </th>
+                                <th style="padding:4px 8px;text-align:right;font-size:.76rem;color:var(--text-muted)">小计
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.items.all %}
+                            <tr>
+                                <td style="padding:6px 8px;font-weight:500">{{ item.goods.goods_name }}</td>
+                                <td
+                                    style="padding:6px 8px;text-align:center;font-size:.78rem;color:var(--text-secondary)">
+                                    {{ item.goods.category.name }}</td>
+                                <td style="padding:6px 8px;text-align:right;font-weight:500">{{ item.quantity }}</td>
+                                <td style="padding:6px 8px;text-align:right">&yen;{{ item.unit_price|floatformat:2 }}
+                                </td>
+                                <td style="padding:6px 8px;text-align:right;font-weight:600;color:var(--c-primary)">
+                                    &yen;{{ item.subtotal|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="display:flex;padding:12px 0;border-bottom:1px solid var(--border-light)">
+                    <span
+                        style="width:110px;font-size:.82rem;font-weight:500;color:var(--text-secondary);flex-shrink:0">订单金额</span>
+                    <span style="font-size:1.1rem;font-weight:700;color:var(--c-danger)">&yen;{{ order.total_amount|floatformat:2 }}</span>
+                </div>
+                <div style="display:flex;padding:12px 0;border-bottom:1px solid var(--border-light)">
+                    <span
+                        style="width:110px;font-size:.82rem;font-weight:500;color:var(--text-secondary);flex-shrink:0">当前状态</span>
+                    <span>
+                        {% if order.status == 'pending' %}<span class="status-badge pending">待处理</span>{% elif order.status == 'shipping' %}<span class="status-badge shipping">运输中</span>{% elif order.status == 'delivered' %}<span class="status-badge delivered">已签收</span>{% else %}<span
+                            class="status-badge cancelled">已取消</span>{% endif %}
+                    </span>
+                </div>
+                <div style="display:flex;padding:12px 0">
+                    <span
+                        style="width:110px;font-size:.82rem;font-weight:500;color:var(--text-secondary);flex-shrink:0">创建时间</span>
+                    <span style="font-size:.88rem;font-weight:500">{{ order.created_at|date:"Y-m-d H:i:s" }}</span>
+                </div>
+                <div class="d-flex gap-2 mt-5 flex-wrap">
+                    <form method="post" action="{% url 'order_status_change' order.id %}" class="d-flex gap-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="shipping">
+                        <button type="submit" class="btn btn-sm btn-primary">标记运输中</button>
+                    </form>
+                    <form method="post" action="{% url 'order_status_change' order.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="delivered">
+                        <button type="submit" class="btn btn-sm btn-success">标记已签收</button>
+                    </form>
+                    <a href="{% url 'order_edit' order.id %}" class="btn btn-sm btn-secondary">编辑订单</a>
+                    <a href="{% url 'index' %}" class="btn btn-sm btn-secondary">返回列表</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script > function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            document.querySelectorAll('.theme-btn').forEach(function (btn) {
+                btn.classList.remove('active');
+                if (btn.getAttribute('data-theme') === theme) btn.classList.add('active');
+            });
+        }
+        var savedTheme = localStorage.getItem('theme') || 'modern';
+        setTheme(savedTheme);
+    </script>
+<script>
+(function () {
+    var k = '_scrollPos';
+    window.addEventListener('beforeunload', function () {
+        sessionStorage.setItem(k, JSON.stringify({
+            p: location.pathname,
+            y: window.scrollY || document.documentElement.scrollTop,
+            t: Date.now()
+        }));
+    });
+    window.addEventListener('load', function () {
+        try {
+            var d = JSON.parse(sessionStorage.getItem(k) || 'null');
+            if (d && d.p === location.pathname && Date.now() - d.t < 5000) {
+                window.scrollTo({ top: d.y, behavior: 'instant' });
+            }
+        } catch (e) { }
+        sessionStorage.removeItem(k);
+    });
+})();
+</script>
+
+</body>
+
+</html>

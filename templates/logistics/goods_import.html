@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="modern">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }} - 物流信息管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/themes.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/themes.css">
+</head>
+<body>
+    <button class="mobile-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')"><i class="bi bi-list"></i></button>
+    <aside class="sidebar">
+        <a href="{% url 'index' %}" class="sidebar-brand">
+            <span class="icon-box"><i class="bi bi-truck"></i></span>物流管理系统
+        </a>
+        <div class="sidebar-nav">
+            <div class="sidebar-section">导航</div>
+            <nav class="nav flex-column">
+                <a class="nav-link" href="{% url 'index' %}"><i class="bi bi-house-door"></i>返回首页</a>
+            </nav>
+        </div>
+        <div class="sidebar-footer">
+            <div class="sidebar-section">主题风格</div>
+            <div class="theme-switcher">
+                <button class="theme-btn active" data-theme="modern" onclick="setTheme('modern')"><i class="bi bi-sun"></i></button>
+                <button class="theme-btn" data-theme="vintage" onclick="setTheme('vintage')"><i class="bi bi-book"></i></button>
+                <button class="theme-btn" data-theme="cyber" onclick="setTheme('cyber')"><i class="bi bi-cpu"></i></button>
+            </div>
+        </div>
+    </aside>
+
+    <div class="main-content">
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'index' %}">首页</a></li>
+                <li class="breadcrumb-item active">{{ title }}</li>
+            </ol>
+        </nav>
+
+        <div class="panel-card mx-auto" style="max-width: 620px;">
+            <div class="panel-header">
+                <h6><i class="bi bi-upload"></i> {{ title }}</h6>
+            </div>
+            <div class="panel-body text-center">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <label class="upload-zone" id="uploadZone" for="fileInput" style="display:block;border:2px dashed var(--border);border-radius:var(--radius-lg);padding:48px 24px;text-align:center;cursor:pointer;transition:all var(--transition-normal);background:var(--bg-panel-hd)">
+                        <div style="font-size:2.5rem;color:var(--c-primary);margin-bottom:12px"><i class="bi bi-cloud-upload"></i></div>
+                        <div style="font-weight:600;font-size:.95rem">点击选择 CSV 文件</div>
+                        <div style="font-size:.85rem;color:var(--text-secondary);margin-top:6px">支持 .csv 格式，每行列：名称, 类别, 重量, 单价, 库存</div>
+                        <div id="fileName" style="font-size:.85rem;color:var(--c-primary);font-weight:500;margin-top:10px"></div>
+                    </label>
+                    <input type="file" name="csv_file" id="fileInput" accept=".csv" style="display:none" onchange="showFileName(this)">
+
+                    <div class="d-flex gap-2 mt-5">
+                        <button type="submit" class="btn btn-primary flex-fill"><i class="bi bi-check-lg me-1"></i>开始导入</button>
+                        <a href="{% url 'index' %}" class="btn btn-secondary flex-fill text-center">返回</a>
+                    </div>
+                </form>
+
+                <div style="margin-top:24px;text-align:left">
+                    <div style="font-size:.8rem;font-weight:600;color:var(--text-secondary);margin-bottom:8px"><i class="bi bi-info-circle me-1"></i > CSV 文件格式示例</div>
+                    <table style="width:100%;text-align:left;border-collapse:collapse;font-size:.78rem">
+                        <thead>
+                            <tr>
+                                <th style="background:var(--bg-panel-hd);padding:6px 10px;border:1px solid var(--border);font-weight:600;color:var(--text-secondary)">名称</th>
+                                <th style="background:var(--bg-panel-hd);padding:6px 10px;border:1px solid var(--border);font-weight:600;color:var(--text-secondary)">类别</th>
+                                <th style="background:var(--bg-panel-hd);padding:6px 10px;border:1px solid var(--border);font-weight:600;color:var(--text-secondary)">重量(kg)</th>
+                                <th style="background:var(--bg-panel-hd);padding:6px 10px;border:1px solid var(--border);font-weight:600;color:var(--text-secondary)">单价(元)</th>
+                                <th style="background:var(--bg-panel-hd);padding:6px 10px;border:1px solid var(--border);font-weight:600;color:var(--text-secondary)">库存</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="padding:5px 10px;border:1px solid var(--border-light);color:var(--text-muted)">笔记本电脑</td>
+                                <td style="padding:5px 10px;border:1px solid var(--border-light);color:var(--text-muted)">电子产品</td>
+                                <td style="padding:5px 10px;border:1px solid var(--border-light);color:var(--text-muted)">2.5</td>
+                                <td style="padding:5px 10px;border:1px solid var(--border-light);color:var(--text-muted)">5999</td>
+                                <td style="padding:5px 10px;border:1px solid var(--border-light);color:var(--text-muted)">50</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:5px 10px;border:1px solid var(--border-light);color:var(--text-muted)">办公椅</td>
+                                <td style="padding:5px 10px;border:1px solid var(--border-light);color:var(--text-muted)">家具</td>
+                                <td style="padding:5px 10px;border:1px solid var(--border-light);color:var(--text-muted)">12.0</td>
+                                <td style="padding:5px 10px;border:1px solid var(--border-light);color:var(--text-muted)">899</td>
+                                <td style="padding:5px 10px;border:1px solid var(--border-light);color:var(--text-muted)">30</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:5px 10px;border:1px solid var(--border-light);color:var(--text-muted)">打印纸</td>
+                                <td style="padding:5px 10px;border:1px solid var(--border-light);color:var(--text-muted)">办公用品</td>
+                                <td style="padding:5px 10px;border:1px solid var(--border-light);color:var(--text-muted)">5.0</td>
+                                <td style="padding:5px 10px;border:1px solid var(--border-light);color:var(--text-muted)">25</td>
+                                <td style="padding:5px 10px;border:1px solid var(--border-light);color:var(--text-muted)">200</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div style="font-size:.74rem;color:var(--text-muted);margin-top:8px">注意：文件编码需为 UTF-8，表头行会被自动跳过。</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script > function showFileName(input) {
+            if (input.files.length > 0) {
+                document.getElementById('fileName').textContent = '已选择: ' + input.files[0].name;
+            }
+        }
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            document.querySelectorAll('.theme-btn').forEach(function(btn) {
+                btn.classList.remove('active');
+                if (btn.getAttribute('data-theme') === theme) btn.classList.add('active');
+            });
+        }
+        var savedTheme = localStorage.getItem('theme') || 'modern';
+        setTheme(savedTheme);
+        document.getElementById('uploadZone').addEventListener('dragover', function(e) { e.preventDefault() });
+        document.getElementById('uploadZone').addEventListener('drop', function(e) {
+            e.preventDefault();
+            var file = e.dataTransfer.files[0];
+            if (file && file.name.endsWith('.csv')) {
+                document.getElementById('fileInput').files = e.dataTransfer.files;
+                showFileName(document.getElementById('fileInput'));
+            }
+        });
+    </script>
+    <script > function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            document.querySelectorAll('.theme-btn').forEach(function(btn) {
+                btn.classList.remove('active');
+                if (btn.getAttribute('data-theme') === theme) btn.classList.add('active');
+            });
+        }
+        var savedTheme = localStorage.getItem('theme') || 'modern';
+        setTheme(savedTheme);
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function () {
+    var k = '_scrollPos';
+    window.addEventListener('beforeunload', function () {
+        sessionStorage.setItem(k, JSON.stringify({
+            p: location.pathname,
+            y: window.scrollY || document.documentElement.scrollTop,
+            t: Date.now()
+        }));
+    });
+    window.addEventListener('load', function () {
+        try {
+            var d = JSON.parse(sessionStorage.getItem(k) || 'null');
+            if (d && d.p === location.pathname && Date.now() - d.t < 5000) {
+                window.scrollTo({ top: d.y, behavior: 'instant' });
+            }
+        } catch (e) { }
+        sessionStorage.removeItem(k);
+    });
+})();
+</script>
+
+</body>
+</html>

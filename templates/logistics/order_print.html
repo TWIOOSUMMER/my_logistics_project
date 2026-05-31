@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="modern">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>运单 - {{ order.order_number }}</title>
+    <link rel="stylesheet" href="/static/css/themes.css">
+</head>
+
+<body>
+    <div class="header">
+        <h2>物流运单</h2>
+        <div class="sub">LOGISTICS WAYBILL &middot; 物流信息管理系统</div>
+    </div>
+
+    <div class="row">
+        <span class="label">运单编号</span>
+        <span class="value" style="font-family:monospace;font-size:14px;font-weight:700">{{ order.order_number }}</span>
+    </div>
+    <div class="row">
+        <span class="label">客户名称</span>
+        <span class="value">{{ order.customer_name }}</span>
+    </div>
+
+    <div class="row" style="flex-direction:column">
+        <span class="label" style="margin-bottom:8px">货物明细</span>
+        <table style="width:100%;font-size:13px;border-collapse:collapse;margin-top:4px">
+            <thead>
+                <tr style="border-bottom:1px solid #e5e7eb">
+                    <th style="text-align:left;padding:4px 6px;font-size:11px;color:#9ca3af">货物名称</th>
+                    <th style="text-align:left;padding:4px 6px;font-size:11px;color:#9ca3af">类别</th>
+                    <th style="text-align:right;padding:4px 6px;font-size:11px;color:#9ca3af">数量</th>
+                    <th style="text-align:right;padding:4px 6px;font-size:11px;color:#9ca3af">单价</th>
+                    <th style="text-align:right;padding:4px 6px;font-size:11px;color:#9ca3af">小计</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items.all %}
+                <tr style="border-bottom:1px solid #f3f4f6">
+                    <td style="padding:5px 6px;font-weight:500">{{ item.goods.goods_name }}</td>
+                    <td style="padding:5px 6px;color:#6b7280;font-size:12px">{{ item.goods.category.name }}</td>
+                    <td style="padding:5px 6px;text-align:right">{{ item.quantity }}</td>
+                    <td style="padding:5px 6px;text-align:right">&yen;{{ item.unit_price|floatformat:2 }}</td>
+                    <td style="padding:5px 6px;text-align:right;font-weight:600">&yen;{{ item.subtotal|floatformat:2 }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="row">
+        <span class="label">合计金额</span>
+        <span class="value amount">&yen;{{ order.total_amount|floatformat:2 }}</span>
+    </div>
+    <div class="row">
+        <span class="label">当前状态</span>
+        <span class="value">
+            {% if order.status == 'pending' %}
+            <span class="status-pending">待处理</span>
+            {% elif order.status == 'shipping' %}
+            <span class="status-shipping">运输中</span>
+            {% elif order.status == 'delivered' %}
+            <span class="status-delivered">已签收</span>
+            {% else %}
+            <span class="status-cancelled">已取消</span>
+            {% endif %}
+        </span>
+    </div>
+    <div class="row">
+        <span class="label">创建时间</span>
+        <span class="value">{{ order.created_at|date:"Y-m-d H:i" }}</span>
+    </div>
+
+    <div class="barcode-line">
+        {% for i in "01234567890123456789012345678901234567890123456789" %}
+        <span class="bar" style="height:{% cycle '20' '35' '25' '40' '30' '38' '22' %}px"></span>
+        {% endfor %}
+    </div>
+    <div class="barcode"># {{ order.order_number }}</div>
+
+    <div class="footer">
+        <p>&copy; 2026 物流信息管理系统 &middot; 本运单仅供内部流转使用</p>
+        <button class="no-print" onclick="window.print()"
+            style="margin-top:12px;padding:8px 24px;background:#1d4ed8;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600">
+            <i class="bi bi-printer"></i> 打印运单
+        </button>
+    </div>
+    <script > function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            document.querySelectorAll('.theme-btn').forEach(function (btn) {
+                btn.classList.remove('active');
+                if (btn.getAttribute('data-theme') === theme) btn.classList.add('active');
+            });
+        }
+        var savedTheme = localStorage.getItem('theme') || 'modern';
+        setTheme(savedTheme);
+    </script>
+<script>
+(function () {
+    var k = '_scrollPos';
+    window.addEventListener('beforeunload', function () {
+        sessionStorage.setItem(k, JSON.stringify({
+            p: location.pathname,
+            y: window.scrollY || document.documentElement.scrollTop,
+            t: Date.now()
+        }));
+    });
+    window.addEventListener('load', function () {
+        try {
+            var d = JSON.parse(sessionStorage.getItem(k) || 'null');
+            if (d && d.p === location.pathname && Date.now() - d.t < 5000) {
+                window.scrollTo({ top: d.y, behavior: 'instant' });
+            }
+        } catch (e) { }
+        sessionStorage.removeItem(k);
+    });
+})();
+</script>
+
+</body>
+
+</html>

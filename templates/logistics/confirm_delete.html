@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="modern">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>确认删除 - 物流信息管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/themes.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <button class="mobile-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')"><i class="bi bi-list"></i></button>
+    <aside class="sidebar">
+        <a href="{% url 'index' %}" class="sidebar-brand"><span class="icon-box"><i class="bi bi-truck"></i></span>物流管理系统</a>
+        <div class="sidebar-nav">
+            <div class="sidebar-section">导航</div>
+            <nav class="nav flex-column">
+                <a class="nav-link" href="{% url 'index' %}"><i class="bi bi-house-door"></i>返回首页</a>
+            </nav>
+            <div class="sidebar-section">快捷入口</div>
+            <nav class="nav flex-column">
+                <a class="nav-link" href="{% url 'goods_add' %}"><i class="bi bi-plus-circle"></i>添加货物</a>
+                <a class="nav-link" href="{% url 'order_add' %}"><i class="bi bi-plus-circle"></i>添加订单</a>
+                <a class="nav-link" href="{% url 'goods_export' %}"><i class="bi bi-download"></i>导出货物CSV</a>
+            </nav>
+        </div>
+        <div class="sidebar-footer">
+            <div class="sidebar-section">主题风格</div>
+            <div class="theme-switcher">
+                <button class="theme-btn active" data-theme="modern" onclick="setTheme('modern')"><i class="bi bi-sun"></i></button>
+                <button class="theme-btn" data-theme="vintage" onclick="setTheme('vintage')"><i class="bi bi-book"></i></button>
+                <button class="theme-btn" data-theme="cyber" onclick="setTheme('cyber')"><i class="bi bi-cpu"></i></button>
+            </div>
+        </div>
+    </aside>
+    <div class="main-content">
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'index' %}">首页</a></li>
+                <li class="breadcrumb-item active">确认删除</li>
+            </ol>
+        </nav>
+
+        <div class="panel-card mx-auto" style="max-width: 520px;border-color:var(--c-danger);border-width:2px">
+            <div class="panel-header" style="background:var(--c-danger-light);border-bottom-color:var(--c-danger-light)">
+                <h6 style="color:var(--c-danger)"><i class="bi bi-exclamation-triangle"></i> 确认删除</h6>
+            </div>
+            <div class="panel-body text-center">
+                <div style="width:72px;height:72px;border-radius:50%;background:var(--c-danger-light);display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
+                    <i class="bi bi-trash" style="font-size:1.8rem;color:var(--c-danger)"></i>
+                </div>
+                <p style="color:var(--text-secondary);font-size:.9rem;margin-bottom:4px">确定要删除</p>
+                <p style="font-size:1.3rem;font-weight:700;word-break:break-all">{{ name }}</p>
+                {% if related_count %}
+                <div style="margin-top:20px;padding:14px 18px;background:var(--c-warning-light);border:1px solid var(--c-warning);border-radius:var(--radius-md);font-size:.82rem;color:var(--c-warning)">
+                    <i class="bi bi-exclamation-circle me-1"></i>该货物关联了 <strong>{{ related_count }}</strong> 条订单，删除后相关联订单也将被移除。
+                </div>
+                {% else %}
+                <p style="color:var(--text-muted);font-size:.82rem;margin-top:14px">此操作不可恢复。</p>
+                {% endif %}
+                <form method="post" style="margin-top:24px">
+                    {% csrf_token %}
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger flex-fill">确认删除</button>
+                        <a href="{% url cancel_url %}" class="btn btn-secondary flex-fill text-center">取消</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script > function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            document.querySelectorAll('.theme-btn').forEach(function(btn) {
+                btn.classList.remove('active');
+                if (btn.getAttribute('data-theme') === theme) btn.classList.add('active');
+            });
+        }
+        var savedTheme = localStorage.getItem('theme') || 'modern';
+        setTheme(savedTheme);
+    </script>
+<script>
+(function () {
+    var k = '_scrollPos';
+    window.addEventListener('beforeunload', function () {
+        sessionStorage.setItem(k, JSON.stringify({
+            p: location.pathname,
+            y: window.scrollY || document.documentElement.scrollTop,
+            t: Date.now()
+        }));
+    });
+    window.addEventListener('load', function () {
+        try {
+            var d = JSON.parse(sessionStorage.getItem(k) || 'null');
+            if (d && d.p === location.pathname && Date.now() - d.t < 5000) {
+                window.scrollTo({ top: d.y, behavior: 'instant' });
+            }
+        } catch (e) { }
+        sessionStorage.removeItem(k);
+    });
+})();
+</script>
+
+</body>
+</html>

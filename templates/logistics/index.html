@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="modern">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>物流信息管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/themes.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+    <button class="mobile-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')"><i
+            class="bi bi-list"></i></button>
+    <aside class="sidebar">
+        <a href="{% url 'index' %}" class="sidebar-brand"><span class="icon-box"><i
+                    class="bi bi-truck"></i></span>物流管理系统</a>
+        <div class="sidebar-nav">
+            <div class="sidebar-section">工作台</div>
+            <nav class="nav flex-column">
+                <a class="nav-link active" href="#cards"><i class="bi bi-speedometer2"></i>运营仪表盘</a>
+                <a class="nav-link" href="#charts-section"><i class="bi bi-pie-chart"></i>数据图表</a>
+                <a class="nav-link" href="#goods-section"><i class="bi bi-box-seam"></i>货物管理</a>
+                <a class="nav-link" href="#order-section"><i class="bi bi-receipt"></i>订单管理</a>
+            </nav>
+            <div class="sidebar-section">快捷入口</div>
+            <nav class="nav flex-column">
+                <a class="nav-link" href="{% url 'goods_add' %}"><i class="bi bi-plus-circle"></i>添加货物</a>
+                <a class="nav-link" href="{% url 'order_add' %}"><i class="bi bi-plus-circle"></i>添加订单</a>
+                <a class="nav-link" href="{% url 'goods_import' %}"><i class="bi bi-upload"></i>批量导入</a>
+                <a class="nav-link" href="{% url 'goods_export' %}"><i class="bi bi-download"></i>导出货物CSV</a>
+                <a class="nav-link" href="{% url 'order_export' %}"><i class="bi bi-download"></i>导出订单CSV</a>
+            </nav>
+        </div>
+        <div class="sidebar-footer">
+            <div class="sidebar-section">主题风格</div>
+            <div class="theme-switcher">
+                <button class="theme-btn active" data-theme="modern" onclick="setTheme('modern')"><i
+                        class="bi bi-sun"></i></button>
+                <button class="theme-btn" data-theme="vintage" onclick="setTheme('vintage')"><i
+                        class="bi bi-book"></i></button>
+                <button class="theme-btn" data-theme="cyber" onclick="setTheme('cyber')"><i
+                        class="bi bi-cpu"></i></button>
+            </div>
+        </div>
+    </aside>
+    <div class="main-content">
+        {% if messages %}
+        <div class="toast-wrapper">
+            {% for msg in messages %}
+ <div class="toast-item"><i class="bi bi-check-circle-fill"></i>{{ msg.message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        <div class="page-header mb-4" id="cards">
+            <h4><i class="bi bi-speedometer2"></i>运营仪表盘</h4>
+            <div class="subtitle">物流数据总览 &middot; 实时监控货物与订单状态</div>
+        </div>
+        <div class="row g-3 mb-5">
+            <div class="col-6 col-xl-2">
+                <div class="stat-card">
+                    <div class="stat-icon primary"><i class="bi bi-box-seam"></i></div>
+                    <div>
+                        <div class="stat-label">货物种类</div>
+ <div class="stat-value">{{ total_goods }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-2">
+                <div class="stat-card">
+                    <div class="stat-icon success"><i class="bi bi-receipt"></i></div>
+                    <div>
+                        <div class="stat-label">订单总数</div>
+ <div class="stat-value">{{ total_orders }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-2">
+                <div class="stat-card">
+                    <div class="stat-icon warning"><i class="bi bi-hourglass-split"></i></div>
+                    <div>
+                        <div class="stat-label">待处理</div>
+ <div class="stat-value">{{ pending_orders }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-2">
+                <a href="?low_stock=1#goods-section" style="text-decoration:none">
+                    <div class="stat-card">
+                        <div class="stat-icon danger"><i class="bi bi-exclamation-triangle"></i></div>
+                        <div>
+                            <div class="stat-label">低库存预警</div>
+ <div class="stat-value">{{ low_stock_count }}</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-xl-2">
+                <div class="stat-card">
+                    <div class="stat-icon info"><i class="bi bi-currency-yen"></i></div>
+                    <div>
+                        <div class="stat-label">库存总值</div>
+ <div class="stat-value">&yen;{{ total_value|default:0|floatformat:0 }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-2">
+                <div class="stat-card">
+                    <div class="stat-icon success"><i class="bi bi-cash-stack"></i></div>
+                    <div>
+                        <div class="stat-label">订单营收</div>
+ <div class="stat-value">&yen;{{ total_revenue|default:0|floatformat:0 }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row g-4 mb-5">
+            <div class="col-lg-4">
+                <div class="panel-card h-100">
+                    <div class="panel-header">
+                        <h6><i class="bi bi-bar-chart"></i>订单状态分布</h6><span
+ style="font-size:.74rem;color:var(--text-muted)">共 {{ total_orders }} 单</span>
+                    </div>
+                    <div class="panel-body">{% with total_orders as t %}
+                        <div class="status-progress-item">
+                            <div class="status-progress-label"><span><span class="dot"
+ style="background:var(--c-warning)"></span>待处理</span><strong>{{ pending_orders }}</strong></div>
+                            <div class="progress">
+                                <div class="progress-bar"
+                                    style="width:{% widthratio pending_orders t|default:1 100 %}%;background:var(--c-warning)">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="status-progress-item">
+                            <div class="status-progress-label"><span><span class="dot"
+ style="background:var(--c-primary)"></span>运输中</span><strong>{{ shipping_orders }}</strong></div>
+                            <div class="progress">
+                                <div class="progress-bar"
+                                    style="width:{% widthratio shipping_orders t|default:1 100 %}%;background:var(--c-primary)">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="status-progress-item">
+                            <div class="status-progress-label"><span><span class="dot"
+ style="background:var(--c-success)"></span>已签收</span><strong>{{ delivered_orders }}</strong></div>
+                            <div class="progress">
+                                <div class="progress-bar"
+                                    style="width:{% widthratio delivered_orders t|default:1 100 %}%;background:var(--c-success)">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="status-progress-item">
+                            <div class="status-progress-label"><span><span class="dot"
+ style="background:var(--text-muted)"></span>已取消</span><strong>{{ cancelled_orders }}</strong></div>
+                            <div class="progress">
+                                <div class="progress-bar"
+                                    style="width:{% widthratio cancelled_orders t|default:1 100 %}%;background:var(--text-muted)">
+                                </div>
+                            </div>
+                        </div>
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="panel-card h-100">
+                    <div class="panel-header">
+                        <h6><i class="bi bi-people"></i>客户下单排行</h6>
+                    </div>
+                    <div class="panel-body">
+                        {% if top_customers %}{% for c in top_customers %}
+                        <div class="d-flex justify-content-between align-items-center mb-2" style="font-size:.84rem">
+                            <span><span
+ style="display:inline-block;width:18px;text-align:center;font-weight:700;color:var(--c-primary);margin-right:8px">{{ forloop.counter }}</span>{{ c.customer_name }}</span><span
+ style="font-weight:600;color:var(--text-secondary)">{{ c.cnt }} 单</span>
+                        </div>
+                        {% endfor %}{% else %}<div class="text-center py-4"
+                            style="color:var(--text-muted);font-size:.85rem">暂无客户数据</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="panel-card h-100">
+                    <div class="panel-header">
+                        <h6><i class="bi bi-clock-history"></i>最近操作</h6>
+                    </div>
+                    <div class="panel-body" style="max-height:200px;overflow-y:auto">
+                        {% if recent_logs %}{% for log in recent_logs %}
+                        <div
+                            style="font-size:.78rem;padding:5px 0;border-bottom:1px solid var(--border-light);display:flex;justify-content:space-between">
+                            <span>{% if log.action == 'create' %}<span style="color:var(--c-success)">新增</span>{% elif log.action == 'update' %}<span style="color:var(--c-primary)">修改</span>{% else %}<span
+ style="color:var(--c-danger)">删除</span>{% endif %}{{ log.model_name }} - {{ log.object_name }}</span><span style="color:var(--text-muted);white-space:nowrap">{{ log.created_at|date:"m-d H:i" }}</span>
+                        </div>
+                        {% endfor %}{% else %}<div class="text-center py-4"
+                            style="color:var(--text-muted);font-size:.85rem">暂无操作记录</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="page-header mb-4" id="charts-section">
+            <h4><i class="bi bi-pie-chart"></i>数据图表</h4>
+            <div class="subtitle">货物类别分布 &middot; 近 7 天订单趋势</div>
+        </div>
+        <div class="row g-4 mb-5">
+            <div class="col-lg-5">
+                <div class="panel-card h-100">
+                    <div class="panel-header">
+                        <h6>货物类别分布</h6>
+                    </div>
+                    <div class="panel-body">
+                        <div class="chart-container"><canvas id="categoryChart"></canvas></div>
+                        {% if not category_distribution %}
+                        <div class="text-center py-4" style="color:var(--text-muted);font-size:.85rem">暂无数据</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <div class="panel-card h-100">
+                    <div class="panel-header">
+                        <h6>近 7 天订单趋势</h6>
+                    </div>
+                    <div class="panel-body">
+                        <div class="chart-container"><canvas id="trendChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="page-header mb-4" id="goods-section">
+            <h4><i class="bi bi-box-seam"></i>货物信息管理</h4>
+            <div class="subtitle">管理仓库货物 &middot; 支持增删改查、排序筛选与导入导出</div>
+        </div>
+        <div class="panel-card mb-5">
+            <div class="panel-header">
+                <h6>货物列表</h6>
+                <div class="d-flex gap-2"><a href="{% url 'goods_import' %}" class="btn btn-sm btn-secondary">导入</a><a
+                        href="{% url 'goods_export' %}" class="btn btn-sm btn-secondary">导出</a><a
+                        href="{% url 'goods_add' %}" class="btn btn-sm btn-primary">添加</a></div>
+            </div>
+            <div class="panel-body">
+                <form class="row g-3 mb-4" method="get" action="{% url 'index' %}">
+                    <div class="col-sm-4">
+                        <div class="input-group input-group-sm"><span class="input-group-text"><i
+                                    class="bi bi-search"></i></span><input type="text" name="goods_q"
+ class="form-control" placeholder="搜索名称..." value="{{ goods_query|default:'' }}"></div>
+                    </div>
+                    <div class="col-sm-2"><select name="category" class="form-select form-select-sm"
+                            id="categorySelect">
+                            <option value="">全部类别</option>
+                            {% for cat in categories %}
+                            {% if category_filter == cat %}
+ <option value="{{ cat }}" selected>{{ cat }}</option>
+                            {% else %}
+ <option value="{{ cat }}">{{ cat }}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select></div>
+                    <div class="col-auto"><button type="submit" class="btn btn-sm btn-primary">筛选</button></div>
+                    {% if goods_query or category_filter or low_stock %}<div class="col-auto"><a
+                            href="{% url 'index' %}" class="btn btn-sm btn-secondary">清除</a></div>{% endif %}
+ {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+ {% if order_query %}<input type="hidden" name="order_q" value="{{ order_query }}">{% endif %}
+ {% if date_from %}<input type="hidden" name="date_from" value="{{ date_from }}">{% endif %}
+ {% if date_to %}<input type="hidden" name="date_to" value="{{ date_to }}">{% endif %}
+                    {% if order_sort != 'id' %}
+ <input type="hidden" name="order_sort" value="{{ order_sort }}">
+                    {% endif %}
+                    {% if order_list.number != 1 %}
+ <input type="hidden" name="order_page" value="{{ order_list.number }}">
+                    {% endif %}
+ <input type="hidden" name="page_size" value="{{ page_size }}">
+                </form>
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th style="width:50px" class="sortable" onclick="setSort('goods_sort','id')">ID</th>
+                                <th class="sortable" onclick="setSort('goods_sort','goods_name')">名称</th>
+                                <th class="sortable" onclick="setSort('goods_sort','category')">类别</th>
+                                <th style="text-align:right" class="sortable" onclick="setSort('goods_sort','weight')">
+                                    重量</th>
+                                <th style="text-align:right" class="sortable" onclick="setSort('goods_sort','price')">单价
+                                </th>
+                                <th style="text-align:right" class="sortable" onclick="setSort('goods_sort','stock')">库存
+                                </th>
+                                <th style="width:100px">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>{% for goods in goods_list %}<tr>
+ <td style="color:var(--text-muted);font-weight:500">#{{ goods.id }}</td>
+ <td style="font-weight:600">{{ goods.goods_name }}</td>
+                                <td><span
+ style="font-size:.76rem;padding:2px 8px;background:var(--border-light);border-radius:6px">{{ goods.category.name }}</span></td>
+ <td style="text-align:right">{{ goods.weight|floatformat:2 }}</td>
+ <td style="text-align:right;font-weight:500">&yen;{{ goods.price|floatformat:2 }}</td>
+                                <td style="text-align:right">{% if goods.stock <= 5 %}<span
+ style="color:var(--c-danger);font-weight:700">{{ goods.stock }}</span>{% else %}{{ goods.stock }}{% endif %}</td>
+                                <td>
+                                    <div class="d-flex gap-1"><a href="{% url 'goods_edit' goods.id %}"
+                                            class="btn-sm-icon edit" title="编辑"><i class="bi bi-pencil"></i></a><a
+                                            href="{% url 'goods_delete' goods.id %}" class="btn-sm-icon delete"
+                                            title="删除"><i class="bi bi-trash"></i></a></div>
+                                </td>
+                            </tr>{% empty %}<tr>
+                                <td colspan="7" style="text-align:center;padding:36px 0;color:var(--text-muted)"><i
+                                        class="bi bi-inbox d-block mb-2" style="font-size:1.8rem"></i>暂无货物数据</td>
+                            </tr>{% endfor %}</tbody>
+                    </table>
+                </div>
+                {% if goods_list.paginator.num_pages > 1 %}
+ <div class="pagination-bar"><span>第 {{ goods_list.start_index }}&ndash;{{ goods_list.end_index }} / {{ goods_list.paginator.count }} 条</span>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">{% if goods_list.has_previous %}<li class="page-item">
+                                <a class="page-link"
+ href="?goods_page={{ goods_list.previous_page_number }}&order_page={{ order_list.number }}&page_size={{ page_size }}&goods_sort={{ goods_sort }}&order_sort={{ order_sort }}&category={{ category_filter }}&status={{ status_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&goods_q={{ goods_query }}&order_q={{ order_query }}&low_stock={{ low_stock }}">&laquo;</a>
+                            </li>{% endif %}{% for num in goods_list.paginator.page_range %}<li
+                                class="page-item {% if goods_list.number == num %}active{% endif %}"><a
+                                    class="page-link"
+ href="?goods_page={{ num }}&order_page={{ order_list.number }}&page_size={{ page_size }}&goods_sort={{ goods_sort }}&order_sort={{ order_sort }}&category={{ category_filter }}&status={{ status_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&goods_q={{ goods_query }}&order_q={{ order_query }}&low_stock={{ low_stock }}">{{ num }}</a></li>{% endfor %}{% if goods_list.has_next %}<li class="page-item"><a
+                                    class="page-link"
+ href="?goods_page={{ goods_list.next_page_number }}&order_page={{ order_list.number }}&page_size={{ page_size }}&goods_sort={{ goods_sort }}&order_sort={{ order_sort }}&category={{ category_filter }}&status={{ status_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&goods_q={{ goods_query }}&order_q={{ order_query }}&low_stock={{ low_stock }}">&raquo;</a>
+                            </li>{% endif %}</ul>
+                    </nav>
+                </div>{% endif %}
+            </div>
+        </div>
+        <div class="page-header mb-4" id="order-section">
+            <h4><i class="bi bi-receipt"></i>订单信息管理</h4>
+            <div class="subtitle">跟踪物流订单 &middot; 支持状态筛选、日期范围、批量操作</div>
+        </div>
+        <div class="panel-card mb-5">
+            <div class="panel-header">
+                <h6>订单列表</h6>
+                <div class="d-flex gap-2"><a href="{% url 'order_export' %}" class="btn btn-sm btn-secondary">导出</a><a
+                        href="{% url 'order_add' %}" class="btn btn-sm btn-success">添加</a></div>
+            </div>
+            <div class="panel-body">
+                <form class="row g-3 mb-3" method="get" action="{% url 'index' %}">
+                    <div class="col-sm-3"><input type="text" name="order_q" class="form-control form-control-sm"
+ placeholder="编号/客户名称..." value="{{ order_query|default:'' }}"></div>
+                    <div class="col-sm-2"><select name="status" class="form-select form-select-sm" id="statusSelect">
+                            <option value="">全部状态</option>
+                            {% for val, label in status_choices %}
+                            {% if status_filter == val %}
+ <option value="{{ val }}" selected>{{ label }}</option>
+                            {% else %}
+ <option value="{{ val }}">{{ label }}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select></div>
+                    <div class="col-sm-2"><input type="date" name="date_from" class="form-control form-control-sm"
+ value="{{ date_from }}"></div>
+                    <div class="col-sm-2"><input type="date" name="date_to" class="form-control form-control-sm"
+ value="{{ date_to }}"></div>
+                    <div class="col-auto"><button type="submit" class="btn btn-sm btn-success">筛选</button></div>
+                    {% if order_query or status_filter or date_from or date_to %}<div class="col-auto"><a
+                            href="{% url 'index' %}" class="btn btn-sm btn-secondary">清除</a></div>{% endif %}
+ {% if goods_query %}<input type="hidden" name="goods_q" value="{{ goods_query }}">{% endif %}
+                    {% if category_filter %}
+ <input type="hidden" name="category" value="{{ category_filter }}">
+                    {% endif %}
+ {% if low_stock %}<input type="hidden" name="low_stock" value="{{ low_stock }}">{% endif %}
+                    {% if goods_sort != 'id' %}
+ <input type="hidden" name="goods_sort" value="{{ goods_sort }}">
+                    {% endif %}
+                    {% if goods_list.number != 1 %}
+ <input type="hidden" name="goods_page" value="{{ goods_list.number }}">
+                    {% endif %}
+ <input type="hidden" name="page_size" value="{{ page_size }}">
+                </form>
+                <form method="post" action="{% url 'order_batch_status' %}" id="batchForm">{% csrf_token %}
+                    <div class="batch-bar" id="batchBar"><span id="batchCount">已选 0 条</span><select name="status"
+                            class="form-select form-select-sm" style="width:auto">
+                            <option value="">-- 标记为 --</option>
+                            <option value="pending">待处理</option>
+                            <option value="shipping">运输中</option>
+                            <option value="delivered">已签收</option>
+                            <option value="cancelled">已取消</option>
+                        </select><button type="submit" class="btn btn-sm btn-primary">执行</button></div>
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th style="width:35px"><input type="checkbox" id="selectAll"
+                                            onchange="toggleAll(this)"></th>
+                                    <th style="width:50px" class="sortable" onclick="setSort('order_sort','id')">ID</th>
+                                    <th class="sortable" onclick="setSort('order_sort','order_number')">编号</th>
+                                    <th class="sortable" onclick="setSort('order_sort','customer_name')">客户</th>
+                                    <th>货物</th>
+                                    <th style="text-align:right">数量</th>
+                                    <th style="text-align:right" class="sortable"
+                                        onclick="setSort('order_sort','total_amount')">金额</th>
+                                    <th>状态</th>
+                                    <th style="text-align:right" class="sortable"
+                                        onclick="setSort('order_sort','created_at')">时间</th>
+                                    <th style="width:120px">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>{% for order in order_list %}<tr>
+ <td><input type="checkbox" name="order_ids" value="{{ order.id }}" class="order-cb"
+                                            onchange="updateBatchBar()"></td>
+ <td style="color:var(--text-muted);font-weight:500">#{{ order.id }}</td>
+ <td style="font-family:var(--font-family-mono);font-size:.8rem;font-weight:500">{{ order.order_number }}</td>
+ <td>{{ order.customer_name }}</td>
+ <td>{% for item in order.items.all %}{{ item.goods.goods_name }}{% if not forloop.last %}, {% endif %}{% empty %}<span
+                                            style="color:var(--text-muted)">--</span>{% endfor %}</td>
+ <td style="text-align:right;font-weight:500">{% for item in order.items.all %}{% if not forloop.first %}+{% endif %}{{ item.quantity }}{% endfor %}</td>
+ <td style="text-align:right;font-weight:600">&yen;{{ order.total_amount|floatformat:2 }}</td>
+                                    <td>{% if order.status == 'pending' %}<span
+                                            class="status-badge pending">待处理</span>{% elif order.status == 'shipping' %}<span class="status-badge shipping">运输中</span>{% elif order.status == 'delivered' %}<span class="status-badge delivered">已签收</span>{% else %}<span
+                                            class="status-badge cancelled">已取消</span>{% endif %}</td>
+ <td style="font-size:.78rem;color:var(--text-muted)">{{ order.created_at|date:"m-d H:i" }}</td>
+                                    <td>
+                                        <div class="d-flex gap-1"><a href="{% url 'order_detail' order.id %}"
+                                                class="btn-sm-icon view" title="详情"><i class="bi bi-eye"></i></a><a
+                                                href="{% url 'order_edit' order.id %}" class="btn-sm-icon edit"
+                                                title="编辑"><i class="bi bi-pencil"></i></a><a
+                                                href="{% url 'order_delete' order.id %}" class="btn-sm-icon delete"
+                                                title="删除"><i class="bi bi-trash"></i></a></div>
+                                    </td>
+                                </tr>{% empty %}<tr>
+                                    <td colspan="10" style="text-align:center;padding:36px 0;color:var(--text-muted)"><i
+                                            class="bi bi-inbox d-block mb-2" style="font-size:1.8rem"></i>暂无订单数据</td>
+                                </tr>{% endfor %}</tbody>
+                        </table>
+                    </div>
+                </form>
+                {% if order_list.paginator.num_pages > 1 %}
+ <div class="pagination-bar"><span>第 {{ order_list.start_index }}&ndash;{{ order_list.end_index }} / {{ order_list.paginator.count }} 条</span>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">{% if order_list.has_previous %}<li class="page-item">
+                                <a class="page-link"
+ href="?goods_page={{ goods_list.number }}&order_page={{ order_list.previous_page_number }}&page_size={{ page_size }}&goods_sort={{ goods_sort }}&order_sort={{ order_sort }}&category={{ category_filter }}&status={{ status_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&goods_q={{ goods_query }}&order_q={{ order_query }}&low_stock={{ low_stock }}">&laquo;</a>
+                            </li>{% endif %}{% for num in order_list.paginator.page_range %}<li
+                                class="page-item {% if order_list.number == num %}active{% endif %}"><a
+                                    class="page-link"
+ href="?goods_page={{ goods_list.number }}&order_page={{ num }}&page_size={{ page_size }}&goods_sort={{ goods_sort }}&order_sort={{ order_sort }}&category={{ category_filter }}&status={{ status_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&goods_q={{ goods_query }}&order_q={{ order_query }}&low_stock={{ low_stock }}">{{ num }}</a></li>{% endfor %}{% if order_list.has_next %}<li class="page-item"><a
+                                    class="page-link"
+ href="?goods_page={{ goods_list.number }}&order_page={{ order_list.next_page_number }}&page_size={{ page_size }}&goods_sort={{ goods_sort }}&order_sort={{ order_sort }}&category={{ category_filter }}&status={{ status_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&goods_q={{ goods_query }}&order_q={{ order_query }}&low_stock={{ low_stock }}">&raquo;</a>
+                            </li>{% endif %}</ul>
+                    </nav>
+                </div>{% endif %}
+                <div class="d-flex justify-content-end align-items-center mt-2"
+ style="font-size:.78rem;color:var(--text-secondary);gap:8px"><span>每页</span>{% for sz in page_sizes %}<a href="?page_size={{ sz }}&goods_page={{ goods_list.number }}&order_page={{ order_list.number }}&goods_sort={{ goods_sort }}&order_sort={{ order_sort }}&category={{ category_filter }}&status={{ status_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&goods_q={{ goods_query }}&order_q={{ order_query }}&low_stock={{ low_stock }}"
+ style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);color:{% if page_size == sz %}#fff{% else %}var(--text-secondary){% endif %};background:{% if page_size == sz %}var(--c-primary){% else %}transparent{% endif %};text-decoration:none;font-weight:500">{{ sz }}</a>{% endfor %}<span>条</span></div>
+            </div>
+        </div>
+    </div>
+ <footer class="footer-bar"><span>&copy; 2026 物流信息管理系统</span><span>货物 {{ total_goods }} 种 &middot; 订单 {{ total_orders }} 条 &middot; 库存总值 &yen;{{ total_value|default:0|floatformat:0 }}</span></footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (function () {
+ document.getElementById('categorySelect').value = '{{ category_filter|escapejs }}';
+ document.getElementById('statusSelect').value = '{{ status_filter|escapejs }}';
+ var gs = '{{ goods_sort|escapejs }}', os = '{{ order_sort|escapejs }}';
+            document.querySelectorAll('.sortable').forEach(function (el) {
+                var field = el.getAttribute('onclick').match(/setSort\('([^']+)','([^']+)'\)/);
+                if (field) {
+                    var sortKey = field[1], fieldName = field[2];
+                    var cur = sortKey === 'goods_sort' ? gs : os;
+                    el.classList.remove('asc', 'desc');
+                    if (cur === fieldName) el.classList.add('asc');
+                    else if (cur === '-' + fieldName) el.classList.add('desc');
+                }
+            });
+        })();
+        function setSort(key, field) {
+            var u = new URL(window.location.href);
+            var cur = u.searchParams.get(key) || 'id';
+            var next = (cur === field ? '-' + field : field);
+            u.searchParams.set(key, next);
+            u.searchParams.set(key === 'goods_sort' ? 'goods_page' : 'order_page', '1');
+            window.location.href = u.toString();
+        }
+        function toggleAll(el) {
+            document.querySelectorAll('.order-cb').forEach(function (cb) { cb.checked = el.checked });
+            updateBatchBar();
+        }
+        function updateBatchBar() {
+            var c = document.querySelectorAll('.order-cb:checked').length;
+            document.getElementById('batchCount').textContent = '已选 ' + c + ' 条';
+            document.getElementById('batchBar').classList.toggle('show', c > 0);
+        }
+        document.querySelectorAll('.toast-item').forEach(function (t, i) {
+            setTimeout(function () {
+                t.style.opacity = '0';
+                t.style.transform = 'translateX(50px)';
+                t.style.transition = 'all .3s';
+                setTimeout(function () { t.remove() }, 300);
+            }, 3500 + i * 300);
+        });
+        document.querySelectorAll('.sidebar .nav-link').forEach(function (l) {
+            l.addEventListener('click', function () {
+                document.querySelectorAll('.sidebar .nav-link').forEach(function (x) { x.classList.remove('active') });
+                this.classList.add('active');
+            });
+        });
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            document.querySelectorAll('.theme-btn').forEach(function (btn) {
+                btn.classList.remove('active');
+                if (btn.getAttribute('data-theme') === theme) btn.classList.add('active');
+            });
+        }
+        var savedTheme = localStorage.getItem('theme') || 'modern';
+        setTheme(savedTheme);
+
+        var categoryChart = null, trendChart = null;
+
+        function cssVar(name) {
+            return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        }
+
+        function chartColors() {
+            return [cssVar('--c-primary'), cssVar('--c-success'), cssVar('--c-warning'),
+            cssVar('--c-danger'), cssVar('--c-info'), '#7c3aed', '#0891b2', '#e11d48'];
+        }
+
+        function textSecondary() { return cssVar('--text-secondary'); }
+        function borderLight() { return cssVar('--border-light'); }
+
+        function drawCharts() {
+            var ctx1 = document.getElementById('categoryChart');
+            var ctx2 = document.getElementById('trendChart');
+            if (!ctx1 || !ctx2) return;
+            if (categoryChart) categoryChart.destroy();
+            if (trendChart) trendChart.destroy();
+            {% if category_distribution %}
+            categoryChart = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+ labels: [{% for d in category_distribution %}'{{ d.category|escapejs }}'{% if not forloop.last %}, {% endif %} {% endfor %}],
+        datasets: [{
+ data: [{% for d in category_distribution %}{{ d.cnt }}{% if not forloop.last %}, {% endif %} {% endfor %}],
+        backgroundColor: chartColors()
+                    }]
+                },
+        options: {
+            responsive: true, maintainAspectRatio: true,
+                plugins: {
+                legend: {
+                    position: 'bottom',
+                        labels: { padding: 14, font: { size: 11 }, color: textSecondary() }
+                }
+            }
+        }
+            });
+        {% endif %}
+        trendChart = new Chart(ctx2, {
+            type: 'bar',
+            data: {
+ labels: [{% for d in recent_week_orders %}'{{ d.date }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                label: '订单数',
+ data: [{% for d in recent_week_orders %}{{ d.count }}{% if not forloop.last %}, {% endif %} {% endfor %}],
+        backgroundColor: cssVar('--c-primary'),
+            borderRadius: 6, barThickness: 24
+                    }]
+                },
+        options: {
+            responsive: true, maintainAspectRatio: true,
+                plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                        ticks: { stepSize: 1, font: { size: 10 }, color: textSecondary() },
+                    grid: { color: borderLight() }
+                },
+                x: {
+                    ticks: { font: { size: 10 }, color: textSecondary() },
+                    grid: { display: false }
+                }
+            }
+        }
+            });
+        }
+
+        drawCharts();
+
+        var _origSetTheme = setTheme;
+        setTheme = function (theme) {
+            _origSetTheme(theme);
+            setTimeout(drawCharts, 80);
+        };
+    </script>
+    <script>
+        (function () {
+            var k = '_scrollPos';
+            window.addEventListener('beforeunload', function () {
+                sessionStorage.setItem(k, JSON.stringify({
+                    p: location.pathname,
+                    y: window.scrollY || document.documentElement.scrollTop,
+                    t: Date.now()
+                }));
+            });
+            window.addEventListener('load', function () {
+                try {
+                    var d = JSON.parse(sessionStorage.getItem(k) || 'null');
+                    if (d && d.p === location.pathname && Date.now() - d.t < 5000) {
+                        window.scrollTo({ top: d.y, behavior: 'instant' });
+                    }
+                } catch (e) { }
+                sessionStorage.removeItem(k);
+            });
+        })();
+    </script>
+
+</body>
+
+</html>
