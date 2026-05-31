@@ -27,8 +27,8 @@ db.sqlite3
 *.pot
 *.pyc
 
-# Static files
-/static/
+# Static files - uncomment below to ignore in production
+# /static/
 /staticfiles/
 
 # Media files
