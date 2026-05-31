@@ -1,8 +1,0 @@
-{
-  "overrides": [
-    {
-      "files": ["*.html", "*.django-html"],
-      "options": { "parser": "none" }
-    }
-  ]
-}
